@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SANDILE | IT Portfolio</title>
+  <style>
+    /* ══════════════════════════════════════════════
+       THEME TOKENS
+    ══════════════════════════════════════════════ */
+    [data-theme="dark"] {
+      --bg:          #000d1a;
+      --bg-panel:    #001122;
+      --bg-nav:      rgba(0,13,26,0.93);
+      --bg-input:    #000d1a;
+      --text:        #e8f4ff;
+      --text-muted:  #4a7a99;
+      --blue:        #00aaff;
+      --blue-dim:    #0055aa;
+      --blue-dark:   #001833;
+      --accent:      #00ff99;
+      --border:      #0055aa;
+      --scanline:    rgba(0,0,0,0.18);
+      --matrix-col:  #0055aa;
+      --matrix-bg:   rgba(0,13,26,0.05);
+      --shadow:      0 4px 32px rgba(0,170,255,0.08);
+      --btn-bg-h:    #00aaff;
+      --btn-text-h:  #000d1a;
+    }
+
+    [data-theme="light"] {
+      --bg:          #f0f6ff;
+      --bg-panel:    #ffffff;
+      --bg-nav:      rgba(240,246,255,0.95);
+      --bg-input:    #e8f0ff;
+      --text:        #0a1628;
+      --text-muted:  #4a6080;
+      --blue:        #0066cc;
+      --blue-dim:    #3388dd;
+      --blue-dark:   #cce0ff;
+      --accent:      #0099aa;
+      --border:      #99bbee;
+      --scanline:    rgba(0,0,0,0);
+      --matrix-col:  #99ccff;
+      --matrix-bg:   rgba(240,246,255,0.08);
+      --shadow:      0 4px 32px rgba(0,102,204,0.10);
+      --btn-bg-h:    #0066cc;
+      --btn-text-h:  #ffffff;
+    }
+
+    /* ══════════════════════════════════════════════
+       RESET & BASE
+    ══════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root { --font-mono: 'Courier New', Courier, monospace; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      overflow-x: hidden;
+      transition: background-color 0.4s, color 0.4s;
+    }
+
+    /* ── Scanline overlay ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 3px,
+        var(--scanline) 3px,
+        var(--scanline) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+      transition: background 0.4s;
+    }
+
+    /* ── Matrix canvas ── */
+    #matrix-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      opacity: 0.07;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ══════════════════════════════════════════════
+       THEME TOGGLE BUTTON
+    ══════════════════════════════════════════════ */
+    #theme-toggle {
+      position: relative;
+      width: 56px;
+      height: 28px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: background 0.3s, border-color 0.3s;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    #theme-toggle::before {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--blue);
+      transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), background 0.3s;
+      box-shadow: 0 0 8px var(--blue);
+    }
+
+    [data-theme="light"] #theme-toggle::before {
+      transform: translateX(28px);
+      background: #ffcc00;
+      box-shadow: 0 0 10px #ffcc00;
+    }
+
+    /* icons inside toggle */
+    #theme-toggle .t-moon,
+    #theme-toggle .t-sun {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 11px;
+      line-height: 1;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    #theme-toggle .t-moon { left: 7px; opacity: 1; }
+    #theme-toggle .t-sun  { right: 6px; opacity: 0.4; }
+
+    [data-theme="light"] #theme-toggle .t-moon { opacity: 0.4; }
+    [data-theme="light"] #theme-toggle .t-sun  { opacity: 1; }
+
+    /* ══════════════════════════════════════════════
+       NAVBAR
+    ══════════════════════════════════════════════ */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 2.5rem;
+      background: var(--bg-nav);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(6px);
+      transition: background 0.4s, border-color 0.4s;
+    }
+
+    .nav-left { display: flex; align-items: center; gap: 1.5rem; }
+
+    .nav-logo {
+      font-size: 1.05rem;
+      color: var(--blue);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .nav-logo span { color: var(--text); }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 2rem;
+    }
+
+    nav ul li a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.82rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      transition: color 0.25s;
+    }
+
+    nav ul li a:hover { color: var(--blue); }
+
+    /* ══════════════════════════════════════════════
+       SECTION SHARED
+    ══════════════════════════════════════════════ */
+    section {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 6rem 2.5rem 4rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* ══════════════════════════════════════════════
+       HOME
+    ══════════════════════════════════════════════ */
+    #home { padding-top: 7rem; }
+
+    .home-tag {
+      font-size: 0.72rem;
+      color: var(--blue-dim);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .home-tag::before { content: '> '; color: var(--accent); }
+
+    h1.glitch {
+      font-size: clamp(2rem, 6vw, 4.2rem);
+      color: var(--text);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      position: relative;
+      line-height: 1.1;
+      margin-bottom: 0.4rem;
+    }
+
+    h1.glitch::before,
+    h1.glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    h1.glitch::before {
+      color: var(--blue);
+      clip-path: polygon(0 0, 100% 0, 100% 40%, 0 40%);
+      animation: glitch-top 3.5s infinite linear alternate-reverse;
+    }
+
+    h1.glitch::after {
+      color: #ff2266;
+      clip-path: polygon(0 60%, 100% 60%, 100% 100%, 0 100%);
+      animation: glitch-bot 4s infinite linear alternate-reverse;
+    }
+
+    [data-theme="light"] h1.glitch::after { color: #cc0044; }
+
+    @keyframes glitch-top {
+      0%   { transform: translate(0); }
+      20%  { transform: translate(-3px,-1px); }
+      40%  { transform: translate(3px,0); }
+      60%  { transform: translate(-1px,1px); }
+      80%  { transform: translate(0); }
+      100% { transform: translate(2px,-1px); }
+    }
+
+    @keyframes glitch-bot {
+      0%   { transform: translate(0); }
+      25%  { transform: translate(3px,1px); }
+      50%  { transform: translate(-2px,0); }
+      75%  { transform: translate(1px,-1px); }
+      100% { transform: translate(-3px,2px); }
+    }
+
+    .home-subtitle {
+      font-size: clamp(0.85rem, 2vw, 1.1rem);
+      color: var(--blue);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 1.8rem;
+    }
+
+    .home-subtitle span { color: var(--text-muted); }
+
+    .typed-line {
+      font-size: 0.98rem;
+      color: var(--text);
+      margin-bottom: 2.5rem;
+      min-height: 1.6rem;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 9px; height: 1.05em;
+      background: var(--accent);
+      vertical-align: text-bottom;
+      animation: blink 0.75s step-end infinite;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-block;
+      padding: 0.62rem 1.5rem;
+      border: 1px solid var(--blue);
+      color: var(--blue);
+      text-decoration: none;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      transition: background 0.25s, color 0.25s, border-color 0.25s;
+      margin-right: 1rem;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      background: transparent;
+    }
+
+    .btn:hover {
+      background: var(--btn-bg-h);
+      color: var(--btn-text-h);
+      border-color: var(--btn-bg-h);
+    }
+
+    .btn-ghost {
+      border-color: var(--text-muted);
+      color: var(--text-muted);
+    }
+
+    .btn-ghost:hover {
+      background: var(--text-muted);
+      color: var(--bg);
+      border-color: var(--text-muted);
+    }
+
+    /* ══════════════════════════════════════════════
+       SECTION HEADERS
+    ══════════════════════════════════════════════ */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .section-header h2 {
+      font-size: 1.5rem;
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      white-space: nowrap;
+    }
+
+    .section-header .line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, var(--border), transparent);
+    }
+
+    .section-num {
+      color: var(--blue);
+      font-size: 0.82rem;
+      letter-spacing: 0.1em;
+    }
+
+    /* ══════════════════════════════════════════════
+       ABOUT
+    ══════════════════════════════════════════════ */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2.5rem;
+    }
+
+    @media (max-width: 680px) { .about-grid { grid-template-columns: 1fr; } }
+
+    .about-bio p {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.85;
+      margin-bottom: 1.1rem;
+    }
+
+    .about-bio p strong { color: var(--blue); font-weight: normal; }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin-top: 1.4rem;
+    }
+
+    .info-item {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+    }
+
+    .info-item span {
+      display: block;
+      color: var(--blue);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 0.68rem;
+      margin-bottom: 0.12rem;
+    }
+
+    /* Skills panel */
+    .skills-panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      padding: 1.4rem;
+      box-shadow: var(--shadow);
+      transition: background 0.4s, border-color 0.4s;
+    }
+
+    .skills-panel h3 {
+      font-size: 0.76rem;
+      color: var(--blue);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 1.2rem;
+    }
+
+    .skill-row { margin-bottom: 0.85rem; }
+
+    .skill-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.3rem;
+    }
+
+    .skill-label span:last-child { color: var(--blue); }
+
+    .skill-bar {
+      height: 4px;
+      background: var(--blue-dark);
+      border: 1px solid var(--border);
+    }
+
+    .skill-fill {
+      height: 100%;
+      background: linear-gradient(to right, var(--blue-dim), var(--blue));
+      width: 0;
+      transition: width 1.3s ease;
+    }
+
+    /* ══════════════════════════════════════════════
+       MODULES SECTION
+    ══════════════════════════════════════════════ */
+    .semester-label {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .sem-badge {
+      font-size: 0.7rem;
+      color: var(--accent);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      border: 1px solid var(--accent);
+      padding: 0.2rem 0.7rem;
+    }
+
+    .sem-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, var(--accent), transparent);
+      opacity: 0.35;
+    }
+
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+
+    .module-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      padding: 1rem 1.2rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.25s, transform 0.25s, background 0.4s;
+      cursor: default;
+    }
+
+    .module-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px;
+      height: 100%;
+      background: var(--blue);
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    .module-card:hover {
+      border-color: var(--blue);
+      transform: translateY(-2px);
+    }
+
+    .module-card:hover::before { opacity: 1; }
+
+    .module-code {
+      font-size: 0.68rem;
+      color: var(--accent);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+
+    .module-name {
+      font-size: 0.88rem;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+      line-height: 1.3;
+    }
+
+    .module-desc {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ══════════════════════════════════════════════
+       CONTACT
+    ══════════════════════════════════════════════ */
+    .contact-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    @media (max-width: 680px) { .contact-layout { grid-template-columns: 1fr; } }
+
+    .terminal-window {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      transition: background 0.4s, border-color 0.4s;
+    }
+
+    .terminal-bar {
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      transition: background 0.4s;
+    }
+
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot.red    { background: #ff3b30; }
+    .dot.yellow { background: #ffcc00; }
+    .dot.green  { background: #34c759; }
+
+    .terminal-body { padding: 1.4rem 1.4rem 1.8rem; }
+
+    .contact-form { display: flex; flex-direction: column; gap: 0.9rem; }
+
+    .form-row { display: flex; flex-direction: column; gap: 0.28rem; }
+
+    .form-row label {
+      font-size: 0.68rem;
+      color: var(--blue);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .form-row label::before { content: '$ '; color: var(--accent); }
+
+    .form-row input,
+    .form-row textarea {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.86rem;
+      padding: 0.55rem 0.75rem;
+      outline: none;
+      transition: border-color 0.2s, background 0.4s, color 0.4s;
+      resize: vertical;
+    }
+
+    .form-row input:focus,
+    .form-row textarea:focus { border-color: var(--blue); }
+
+    .form-row textarea { min-height: 90px; }
+
+    .form-status {
+      font-size: 0.76rem;
+      min-height: 1.1rem;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+    }
+
+    /* Direct contact info panel */
+    .contact-info-panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      padding: 1.6rem;
+      box-shadow: var(--shadow);
+      transition: background 0.4s, border-color 0.4s;
+    }
+
+    .contact-info-panel h3 {
+      font-size: 0.72rem;
+      color: var(--blue);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 1.4rem;
+    }
+
+    .contact-entry {
+      margin-bottom: 1.2rem;
+      padding-bottom: 1.2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .contact-entry:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+    .contact-entry-label {
+      font-size: 0.64rem;
+      color: var(--accent);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 0.25rem;
+    }
+
+    .contact-entry-value {
+      font-size: 0.84rem;
+      color: var(--text);
+    }
+
+    .contact-entry-value a {
+      color: var(--text);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .contact-entry-value a:hover { color: var(--blue); }
+
+    /* Social links */
+    .social-row {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.8rem;
+      flex-wrap: wrap;
+    }
+
+    .social-btn {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+      padding: 0.4rem 0;
+    }
+
+    .social-btn::before { content: '// '; color: var(--blue); }
+    .social-btn:hover { color: var(--blue); }
+
+    /* ── Terminal typewriter animation ── */
+    .term-cmd {
+      display: inline-block;
+      overflow: hidden;
+      white-space: nowrap;
+      color: var(--accent);
+      width: 0;
+      border-right: 2px solid var(--accent);
+      animation:
+        term-type   2.4s steps(14, end)       1s  infinite,
+        term-blink  0.75s step-end            infinite,
+        term-erase  2.4s steps(14, end)       3.6s infinite;
+      animation-fill-mode: both;
+    }
+
+    @keyframes term-type {
+      from { width: 0; }
+      to   { width: 8.4em; }
+    }
+
+    @keyframes term-erase {
+      from { width: 8.4em; }
+      to   { width: 0; }
+    }
+
+    @keyframes term-blink {
+      50% { border-color: transparent; }
+    }
+
+    /* ── Project card button spacing ── */
+    .module-card .btn { margin-top: 0; }
+
+    /* ══════════════════════════════════════════════
+       FOOTER
+    ══════════════════════════════════════════════ */
+    footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 1.4rem;
+      font-size: 0.68rem;
+      color: var(--blue-dim);
+      border-top: 1px solid var(--border);
+      letter-spacing: 0.12em;
+      transition: border-color 0.4s, color 0.4s;
+    }
+
+    /* ══════════════════════════════════════════════
+       SCROLL REVEAL
+    ══════════════════════════════════════════════ */
+    .reveal {
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ══════════════════════════════════════════════
+       RESPONSIVE
+    ══════════════════════════════════════════════ */
+    @media (max-width: 560px) {
+      nav { padding: 0.65rem 1.2rem; }
+      nav ul { gap: 1.2rem; }
+      section { padding: 5rem 1.2rem 3rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="matrix-canvas"></canvas>
+
+  <!-- ══════════════════════════════════════════════
+       NAVBAR
+  ══════════════════════════════════════════════ -->
+  <nav>
+    <div class="nav-left">
+      <div class="nav-logo">&lt;<span>SANDILE</span>&gt;</div>
+      <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle light / dark mode">
+        <span class="t-moon">🌙</span>
+        <span class="t-sun">☀️</span>
+      </button>
+    </div>
+    <ul>
+      <li><a href="#home">Home</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#modules">Modules</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- ══════════════════════════════════════════════
+       HOME
+  ══════════════════════════════════════════════ -->
+  <section id="home">
+    <p class="home-tag">Initializing portfolio_v2.0...</p>
+    <h1 class="glitch" data-text="SANDILE">SANDILE</h1>
+    <p class="home-subtitle">
+      Sandile Siphelele Mkhasibe &nbsp;<span>// TUT · IT Year 02</span>
+    </p>
+    <p class="typed-line" id="typed-text"><span class="cursor"></span></p>
+    <div>
+      <a href="Sandile_Mkhasibe_CV.pdf" class="btn" download="Sandile_Mkhasibe_CV.pdf">./download_cv.pdf</a>
+      <a href="#about" class="btn">./about_me</a>
+      <a href="#modules" class="btn btn-ghost">./modules</a>
+      <a href="#contact" class="btn btn-ghost">./contact</a>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       ABOUT
+  ══════════════════════════════════════════════ -->
+  <section id="about">
+    <div class="section-header reveal">
+      <span class="section-num">[01]</span>
+      <h2>About</h2>
+      <div class="line"></div>
+    </div>
+
+    <div class="about-grid">
+      <div class="about-bio reveal">
+        <p>
+          I'm <strong>Sandile Siphelele Mkhasibe</strong> — a second-year
+          <strong>Diploma in Information Technology</strong> student at
+          <strong>Tshwane University of Technology (TUT)</strong>,
+          Soshanguve South Campus.
+        </p>
+        <p>
+          My passion lives at the intersection of networking, systems, and security.
+          I enjoy taking things apart to understand how they work — then putting them back
+          together better than I found them.
+        </p>
+        <p>
+          Currently deepening my knowledge in <strong>computer networks</strong>,
+          <strong>operating systems</strong>, and <strong>programming</strong>,
+          while building real-world projects that solve real-world problems.
+        </p>
+        <div class="info-grid">
+          <div class="info-item"><span>Institution</span>TUT — Soshanguve</div>
+          <div class="info-item"><span>Programme</span>Dip. Info. Technology</div>
+          <div class="info-item"><span>Year</span>2nd Year</div>
+          <div class="info-item"><span>Focus</span>Networks &amp; Security</div>
+        </div>
+      </div>
+
+      <div class="skills-panel reveal">
+        <h3>// skill_matrix.exe</h3>
+        <div class="skill-row">
+          <div class="skill-label"><span>Computer Networks</span><span>80%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-width="80"></div></div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-label"><span>Operating Systems</span><span>74%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-width="74"></div></div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-label"><span>Object-Oriented Programming</span><span>70%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-width="70"></div></div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-label"><span>Computer Security</span><span>68%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-width="68"></div></div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-label"><span>Virtualisation</span><span>65%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-width="65"></div></div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-label"><span>Linux / CLI</span><span>76%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-width="76"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       MODULES
+  ══════════════════════════════════════════════ -->
+  <section id="modules">
+    <div class="section-header reveal">
+      <span class="section-num">[02]</span>
+      <h2>Modules</h2>
+      <div class="line"></div>
+    </div>
+    <p class="reveal" style="color:var(--text-muted);font-size:0.84rem;margin-bottom:1.8rem;line-height:1.7;">
+      Second-year modules from the <strong style="color:var(--blue)">TUT 2026 Prospectus</strong> —
+      Diploma in Information Technology (NQF Level 6), as determined by the Head of Department:
+    </p>
+
+    <!-- Semester 1 -->
+    <div class="semester-label reveal">
+      <span class="sem-badge">Semester 1</span>
+      <div class="sem-line"></div>
+    </div>
+
+    <div class="modules-grid">
+
+      <div class="module-card reveal">
+        <div class="module-code">CN1216D &nbsp;·&nbsp; NQF-L 6 &nbsp;·&nbsp; 15 Credits</div>
+        <div class="module-name">Computer Networks 215R</div>
+        <div class="module-desc">Network protocols, IP addressing, subnetting, and LAN/WAN fundamentals. Builds on Computer Networks 125R.</div>
+      </div>
+
+      <div class="module-card reveal">
+        <div class="module-code">OOR216D &nbsp;·&nbsp; NQF-L 6 &nbsp;·&nbsp; 15 Credits</div>
+        <div class="module-name">Object-Oriented Programming 216R</div>
+        <div class="module-desc">Core OOP concepts — classes, inheritance, encapsulation and polymorphism — using Java. Builds on Principles of Programming 125R.</div>
+      </div>
+
+      <div class="module-card reveal">
+        <div class="module-code">OSY216D &nbsp;·&nbsp; NQF-L 6 &nbsp;·&nbsp; 15 Credits</div>
+        <div class="module-name">Operating Systems 226R</div>
+        <div class="module-desc">Process management, memory management, file systems and scheduling across Linux and Windows. Builds on Computer Architecture 125R.</div>
+      </div>
+
+      <div class="module-card reveal">
+        <div class="module-code">PS1216D &nbsp;·&nbsp; NQF-L 6 &nbsp;·&nbsp; 15 Credits</div>
+        <div class="module-name">Computer Security 215R</div>
+        <div class="module-desc">Fundamentals of cybersecurity, threats, vulnerabilities and cryptographic principles. Builds on Computer Networks 125R.</div>
+      </div>
+
+    </div>
+
+    <!-- Semester 2 -->
+    <div class="semester-label reveal" style="margin-top:2rem;">
+      <span class="sem-badge">Semester 2</span>
+      <div class="sem-line"></div>
+    </div>
+
+    <div class="modules-grid">
+
+      <div class="module-card reveal">
+        <div class="module-code">AOR216D &nbsp;·&nbsp; NQF-L 6 &nbsp;·&nbsp; 15 Credits</div>
+        <div class="module-name">Advanced Object-Oriented Programming 226R</div>
+        <div class="module-desc">Advanced OOP — design patterns, data structures, collections and exception handling. Builds on OOR216D.</div>
+      </div>
+
+      <div class="module-card reveal">
+        <div class="module-code">CN2216D &nbsp;·&nbsp; NQF-L 6 &nbsp;·&nbsp; 15 Credits</div>
+        <div class="module-name">Computer Networks 226R</div>
+        <div class="module-desc">Routing protocols, switching, network security and WAN technologies. Builds on CN1216D.</div>
+      </div>
+
+      <div class="module-card reveal">
+        <div class="module-code">VMA216D &nbsp;·&nbsp; NQF-L 6 &nbsp;·&nbsp; 15 Credits</div>
+        <div class="module-name">Virtual Machines 216R</div>
+        <div class="module-desc">Virtualisation concepts, hypervisors, VM deployment and management. Requires PS1216D plus one elective.</div>
+      </div>
+
+      <div class="module-card reveal">
+        <div class="module-code">PS2216D &nbsp;·&nbsp; NQF-L 6 &nbsp;·&nbsp; 15 Credits</div>
+        <div class="module-name">Computer Security 226R</div>
+        <div class="module-desc">Advanced security — penetration testing, network defence, incident response. Builds on PS1216D.</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       PROJECTS
+  ══════════════════════════════════════════════ -->
+  <section id="projects">
+    <div class="section-header reveal">
+      <span class="section-num">[03]</span>
+      <h2>Projects</h2>
+      <div class="line"></div>
+    </div>
+    <p class="reveal" style="color:var(--text-muted);font-size:0.84rem;margin-bottom:1.8rem;line-height:1.7;">
+      Real-world builds — applying what I learn in the lab to problems that matter:
+    </p>
+
+    <div class="modules-grid">
+
+      <div class="module-card reveal" style="cursor:default;">
+        <div class="module-code">Project_01 &nbsp;·&nbsp; Networking &nbsp;·&nbsp; Virtualisation</div>
+        <div class="module-name">Virtual Machine &amp; Network Security Lab</div>
+        <div class="module-desc">
+          Configured isolated virtual networks using <strong style="color:var(--blue)">Hyper-V</strong> and
+          <strong style="color:var(--blue)">VirtualBox</strong> to simulate real-world enterprise environments.
+          Set up segmented VLANs, firewall rules, and inter-VM routing to test attack and defence scenarios.
+          Compiled detailed technical lab reports documenting topology diagrams, configurations, and findings.
+        </div>
+        <div style="margin-top:1rem;">
+          <a href="https://github.com/" target="_blank" rel="noopener" class="btn btn-ghost">./view_repo</a>
+        </div>
+      </div>
+
+      <div class="module-card reveal" style="cursor:default;">
+        <div class="module-code">Project_02 &nbsp;·&nbsp; Automation &nbsp;·&nbsp; Finance</div>
+        <div class="module-name">MT5 Algorithmic Trading Bot</div>
+        <div class="module-desc">
+          Built an automated trading system on <strong style="color:var(--blue)">MetaTrader 5</strong> using
+          MQL5, implementing entry/exit logic based on technical indicators and custom signal conditions.
+          Optimized backtest latency by refactoring tick-processing loops and reducing redundant indicator calls,
+          improving strategy execution speed across multi-symbol backtests.
+        </div>
+        <div style="margin-top:1rem;">
+          <a href="https://github.com/" target="_blank" rel="noopener" class="btn btn-ghost">./view_repo</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       CONTACT
+  ══════════════════════════════════════════════ -->
+  <section id="contact">
+    <div class="section-header reveal">
+      <span class="section-num">[04]</span>
+      <h2>Contact</h2>
+      <div class="line"></div>
+    </div>
+
+    <div class="contact-layout">
+
+      <!-- Form -->
+      <div class="terminal-window reveal">
+        <div class="terminal-bar">
+          <div class="dot red"></div>
+          <div class="dot yellow"></div>
+          <div class="dot green"></div>
+          <span>&nbsp;sandile@tut:~$&nbsp;</span><span class="term-cmd">contact --open</span>
+        </div>
+        <div class="terminal-body">
+          <form class="contact-form" id="contact-form" novalidate>
+            <div class="form-row">
+              <label for="c-name">name</label>
+              <input type="text" id="c-name" name="name" placeholder="your_name" required />
+            </div>
+            <div class="form-row">
+              <label for="c-email">email</label>
+              <input type="email" id="c-email" name="email" placeholder="you@domain.com" required />
+            </div>
+            <div class="form-row">
+              <label for="c-message">message</label>
+              <textarea id="c-message" name="message" placeholder="echo 'Hello Sandile...'" required></textarea>
+            </div>
+            <div class="form-status" id="form-status"></div>
+            <button type="submit" class="btn">./send_message</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Direct info -->
+      <div class="contact-info-panel reveal">
+        <h3>// direct_contact.cfg</h3>
+
+        <div class="contact-entry">
+          <div class="contact-entry-label">Personal Email</div>
+          <div class="contact-entry-value">
+            <a href="mailto:Siphelelemkhas@gmail.com">Siphelelemkhas@gmail.com</a>
+          </div>
+        </div>
+
+        <div class="contact-entry">
+          <div class="contact-entry-label">Student Email</div>
+          <div class="contact-entry-value">
+            <a href="mailto:251047391@tut4life.ac.za">251047391@tut4life.ac.za</a>
+          </div>
+        </div>
+
+        <div class="contact-entry">
+          <div class="contact-entry-label">Phone</div>
+          <div class="contact-entry-value">
+            <a href="tel:+27729833139">072 983 3139</a>
+          </div>
+        </div>
+
+        <div class="contact-entry">
+          <div class="contact-entry-label">Institution</div>
+          <div class="contact-entry-value">Tshwane University of Technology</div>
+        </div>
+
+        <div class="contact-entry">
+          <div class="contact-entry-label">Student Number</div>
+          <div class="contact-entry-value">251047391</div>
+        </div>
+
+        <div class="social-row">
+          <a href="https://github.com/" target="_blank" rel="noopener" class="social-btn">GitHub</a>
+          <a href="https://linkedin.com/" target="_blank" rel="noopener" class="social-btn">LinkedIn</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       FOOTER
+  ══════════════════════════════════════════════ -->
+  <footer>
+    &lt;/&gt; &nbsp;SANDILE SIPHELELE MKHASIBE &nbsp;|&nbsp; TUT — Information Technology &nbsp;|&nbsp; <span id="year"></span>
+  </footer>
+
+  <!-- ══════════════════════════════════════════════
+       SCRIPTS
+  ══════════════════════════════════════════════ -->
+  <script>
+    /* ── Theme Toggle ── */
+    (function () {
+      const btn = document.getElementById('theme-toggle');
+      const html = document.documentElement;
+
+      // Restore saved preference
+      const saved = localStorage.getItem('theme');
+      if (saved) html.setAttribute('data-theme', saved);
+
+      btn.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+      });
+    })();
+
+    /* ── Matrix Rain ── */
+    (function () {
+      const canvas = document.getElementById('matrix-canvas');
+      const ctx = canvas.getContext('2d');
+      const chars = '01アイウエオカキクケコサシスセソABCDEFGHIJKLMNOPQRSTUVWXYZ<>{}[]//\\';
+      let cols, drops;
+
+      function getMatrixColor() {
+        return document.documentElement.getAttribute('data-theme') === 'light'
+          ? '#99ccff' : '#0055aa';
+      }
+
+      function getMatrixBg() {
+        return document.documentElement.getAttribute('data-theme') === 'light'
+          ? 'rgba(240,246,255,0.08)' : 'rgba(0,13,26,0.05)';
+      }
+
+      function init() {
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+        cols = Math.floor(canvas.width / 14);
+        drops = Array(cols).fill(1);
+      }
+
+      function draw() {
+        ctx.fillStyle = getMatrixBg();
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = getMatrixColor();
+        ctx.font = '14px monospace';
+        drops.forEach((y, i) => {
+          const ch = chars[Math.floor(Math.random() * chars.length)];
+          ctx.fillText(ch, i * 14, y * 14);
+          if (y * 14 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+          drops[i]++;
+        });
+      }
+
+      init();
+      setInterval(draw, 50);
+      window.addEventListener('resize', init);
+    })();
+
+    /* ── Typewriter ── */
+    (function () {
+      const el = document.getElementById('typed-text');
+      const lines = [
+        'TUT student. Network explorer. Problem solver.',
+        'Second-year IT @ Tshwane University of Technology.',
+        'Code. Break. Learn. Repeat.',
+        'Access granted. Welcome to my portfolio.',
+        'Building the future, one packet at a time.',
+      ];
+      let li = 0, ci = 0, deleting = false;
+
+      function type() {
+        const current = lines[li];
+        const cursor  = '<span class="cursor"></span>';
+        if (!deleting) {
+          ci++;
+          el.innerHTML = current.slice(0, ci) + cursor;
+          if (ci === current.length) {
+            deleting = true;
+            setTimeout(type, 2000);
+            return;
+          }
+        } else {
+          ci--;
+          el.innerHTML = current.slice(0, ci) + cursor;
+          if (ci === 0) {
+            deleting = false;
+            li = (li + 1) % lines.length;
+          }
+        }
+        setTimeout(type, deleting ? 38 : 58);
+      }
+      setTimeout(type, 900);
+    })();
+
+    /* ── Scroll Reveal ── */
+    (function () {
+      const items = document.querySelectorAll('.reveal');
+      const obs = new IntersectionObserver(entries => {
+        entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+      }, { threshold: 0.12 });
+      items.forEach(i => obs.observe(i));
+    })();
+
+    /* ── Skill bars ── */
+    (function () {
+      const fills = document.querySelectorAll('.skill-fill');
+      const obs = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.style.width = e.target.dataset.width + '%';
+            obs.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.3 });
+      fills.forEach(f => obs.observe(f));
+    })();
+
+    /* ── Contact form ── */
+    document.getElementById('contact-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const status  = document.getElementById('form-status');
+      const nameVal = this.name.value.trim();
+      const emailVal = this.email.value.trim();
+      const msgVal  = this.message.value.trim();
+
+      if (!nameVal || !emailVal || !msgVal) {
+        status.style.color = '#ff2266';
+        status.textContent = '// Error: all fields required.';
+        return;
+      }
+      status.style.color = 'var(--accent)';
+      status.textContent = '// Transmission queued...';
+      setTimeout(() => {
+        status.textContent = '// Message delivered. I\'ll be in touch, ' + nameVal + '.';
+        this.reset();
+      }, 1400);
+    });
+
+    /* ── Footer year ── */
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
